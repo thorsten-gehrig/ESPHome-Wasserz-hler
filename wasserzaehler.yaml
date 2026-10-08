@@ -2,9 +2,21 @@ esphome:
   name: wasserzaehler
   friendly_name: Wasserzähler
   area: Heizungskeller
+  on_boot:
+    - priority: -100
+      then:
+        - pulse_meter.set_total_pulses:
+            id: wasser_puls
+            value: !lambda "return id(wasser_total_saved) / 0.001;"
 
 esp8266:
   board: d1_mini
+
+globals:
+  - id: wasser_total_saved
+    type: float
+    restore_value: yes
+    initial_value: "0"
 
 # Enable logging
 logger:
@@ -90,3 +102,14 @@ sensor:
     state_class: measurement
     filters:
       - multiply: 0.01666667
+
+interval:
+  - interval: 1h
+    then:
+      - if:
+          condition:
+            lambda: "return id(water_meter_total).state != id(wasser_total_saved);"
+          then:
+            - globals.set:
+                id: wasser_total_saved
+                value: !lambda "return id(water_meter_total).state;"
