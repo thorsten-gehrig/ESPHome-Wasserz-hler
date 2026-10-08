@@ -1,0 +1,68 @@
+esphome:
+  name: wasserzaehler
+  friendly_name: Wasserzähler
+  area: Heizungskeller
+
+esp8266:
+  board: d1_mini
+
+# Enable logging
+logger:
+
+time:
+  - platform: homeassistant
+    id: homeassistant_time
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: !secret api_password
+
+ota:
+  - platform: esphome
+    id: wasserzaehler_ota
+    password: !secret ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Wasserzaehler Fallback Hotspot"
+    password: "notasecret"
+
+mqtt:
+  broker: 192.168.0.7
+  username: !secret mqtt_user
+  password: !secret mqtt_password
+  discovery: true
+
+captive_portal:
+
+web_server:
+  port: 80
+  auth:
+    username: admin
+    password: !secret notasecret
+    type: digest
+sensor:
+  - platform: pulse_meter
+    pin:
+      number: GPIO12 # Entspricht D6 auf dem D1 Mini
+      mode: INPUT_PULLUP # Aktiviert internen Pullup-Widerstand für Reedschalter
+    name: "Wasser Durchfluss"
+    unit_of_measurement: "L/min"
+    icon: "mdi:water"
+    timeout: 20s
+    internal_filter: 100ms # Verhindert Mehrfach-Impulse durch Kontaktprellen
+    
+    total:
+      name: "Water Meter Total"
+      unit_of_measurement: "m³"
+      id: water_meter_total
+      accuracy_decimals: 3
+      device_class: water
+      state_class: total_increasing
+      filters:
+        - multiply: 0.001
