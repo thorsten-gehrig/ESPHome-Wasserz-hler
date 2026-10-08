@@ -51,12 +51,13 @@ sensor:
     pin:
       number: GPIO12 # Entspricht D6 auf dem D1 Mini
       mode: INPUT_PULLUP # Aktiviert internen Pullup-Widerstand für Reedschalter
-    name: "Wasser Durchfluss"
-    id: wasser_durchfluss
+    id: wasser_puls
+    name: "Wasser Durchfluss raw"
+    internal: true
     unit_of_measurement: "L/min"
     icon: "mdi:water"
     timeout: 20s
-    internal_filter: 100ms # Verhindert Mehrfach-Impulse durch Kontaktprellen
+    internal_filter: 5s # Debounce -> wirkt auch auf das Total (100ms = nur Prellen)
     
     total:
       name: "Water Meter Total"
@@ -68,13 +69,24 @@ sensor:
       filters:
         - multiply: 0.001
 
-  - platform: template
+  - platform: copy
+    source_id: wasser_puls
+    name: "Wasser Durchfluss"
+    id: wasser_durchfluss
+    unit_of_measurement: "L/min"
+    icon: "mdi:water"
+    filters:
+      - sliding_window_moving_average:
+          window_size: 6
+          send_every: 6
+
+  - platform: copy
+    source_id: wasser_puls
     name: "Impulses per Second"
     id: impulses_per_second
     unit_of_measurement: "imp/s"
     icon: "mdi:pulse"
     accuracy_decimals: 3
     state_class: measurement
-    update_interval: 10s
-    lambda: |-
-      return id(wasser_durchfluss).state / 60.0;
+    filters:
+      - multiply: 0.01666667
