@@ -16,6 +16,7 @@ globals:
   - id: wasser_total_saved
     type: float
     restore_value: yes
+    update_interval: 1h
     initial_value: "0"
 
 # Enable logging
@@ -80,6 +81,9 @@ sensor:
       state_class: total_increasing
       filters:
         - multiply: 0.001
+      on_value:
+        - lambda: |-
+            id(wasser_total_saved) = x;
 
   - platform: copy
     source_id: wasser_puls
@@ -103,13 +107,3 @@ sensor:
     filters:
       - multiply: 0.01666667
 
-interval:
-  - interval: 1h
-    then:
-      - if:
-          condition:
-            lambda: "return id(water_meter_total).state != id(wasser_total_saved);"
-          then:
-            - globals.set:
-                id: wasser_total_saved
-                value: !lambda "return id(water_meter_total).state;"
